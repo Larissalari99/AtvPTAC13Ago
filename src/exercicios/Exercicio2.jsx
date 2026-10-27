@@ -1,29 +1,39 @@
 import { useEffect, useState } from 'react'
 
-function Exercicio2() {
-  const [comentarios, setComentarios] = useState([])
+// Para testar o erro, troque por:
+// 'https://jsonplaceholder.typicode.com/usuariosenterrado'
+const URL = 'https://jsonplaceholder.typicode.com/users'
+
+// Exercício 2: estado de erro com try/catch.
+export default function Exercicio2() {
+  const [usuarios, setUsuarios] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
 
   useEffect(() => {
-    async function buscarComentarios() {
-      const resposta = await fetch('https://jsonplaceholder.typicode.com/comments?postId=1')
-      const dados = await resposta.json()
-      setComentarios(dados)
+    async function carregar() {
+      try {
+        const resp = await fetch(URL)
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+        const data = await resp.json()
+        setUsuarios(data)
+      } catch (err) {
+        setErro(err.message)
+      } finally {
+        setCarregando(false)
+      }
     }
-    buscarComentarios()
+    carregar()
   }, [])
 
+  if (carregando) return <p>Carregando...</p>
+  if (erro) return <p>Erro: {erro}</p>
+
   return (
-    <div>
-      <h1>Comentários do post 1</h1>
-      <ul>
-        {comentarios.map((c) => (
-          <li key={c.id}>
-            {c.name} - {c.email}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul>
+      {usuarios.map((u) => (
+        <li key={u.id}>{u.name}</li>
+      ))}
+    </ul>
   )
 }
-
-export default Exercicio2
