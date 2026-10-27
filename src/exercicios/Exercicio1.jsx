@@ -1,29 +1,29 @@
 import { useEffect, useState } from 'react'
 
-function Exercicio1() {
-  const [posts, setPosts] = useState([])
+const URL = 'https://jsonplaceholder.typicode.com/users'
+
+// Exercício 1: estado de carregamento.
+export default function Exercicio1() {
+  const [usuarios, setUsuarios] = useState([])
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    async function buscarPosts() {
-      const resposta = await fetch('https://jsonplaceholder.typicode.com/posts')
-      const dados = await resposta.json()
-      setPosts(dados.slice(0, 10))
+    async function carregar() {
+      const resp = await fetch(URL)
+      const data = await resp.json()
+      setUsuarios(data)
+      setCarregando(false)
     }
-    buscarPosts()
+    carregar()
   }, [])
 
+  if (carregando) return <p>Carregando...</p>
+
   return (
-    <div>
-      <h1>Posts</h1>
-      <ul>
-        {posts.map((post) => (
-          <li key={post.id}>
-            {post.id} - {post.title}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul>
+      {usuarios.map((u) => (
+        <li key={u.id}>{u.name}</li>
+      ))}
+    </ul>
   )
 }
-
-export default Exercicio1
