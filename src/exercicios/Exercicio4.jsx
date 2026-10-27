@@ -1,28 +1,47 @@
 import { useEffect, useState } from 'react'
 
-function Exercicio4() {
-  const [usuario, setUsuario] = useState(null)
+const URL = 'https://jsonplaceholder.typicode.com/users'
+
+// Exercício 4: estado de lista vazia.
+export default function Exercicio4() {
+  const [usuarios, setUsuarios] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
 
   useEffect(() => {
-    async function buscarUsuario() {
-      const resposta = await fetch('https://jsonplaceholder.typicode.com/users/5')
-      const dados = await resposta.json()
-      setUsuario(dados)
+    const controller = new AbortController()
+
+    async function carregar() {
+      try {
+        const resp = await fetch(URL, { signal: controller.signal })
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+
+        const data = await resp.json()
+        // Para simular resposta vazia, comente a linha acima e use esta:
+        // const data = []
+
+        setUsuarios(data)
+      } catch (err) {
+        if (err.name === 'AbortError') return
+        setErro(err.message)
+      } finally {
+        if (!controller.signal.aborted) setCarregando(false)
+      }
     }
-    buscarUsuario()
+    carregar()
+
+    return () => controller.abort()
   }, [])
 
-  // Enquanto usuario for null, não tentamos ler usuario.name
-  if (usuario === null) {
-    return <p>Carregando...</p>
-  }
+  if (carregando) return <p>Carregando...</p>
+  if (erro) return <p>Erro: {erro}</p>
+  if (usuarios.length === 0) return <p>Nenhum usuário encontrado.</p>
 
   return (
-    <div>
-      <h1>{usuario.name}</h1>
-      <p>{usuario.email}</p>
-    </div>
+    <ul>
+      {usuarios.map((u) => (
+        <li key={u.id}>{u.name}</li>
+      ))}
+    </ul>
   )
 }
-
-export default Exercicio4
