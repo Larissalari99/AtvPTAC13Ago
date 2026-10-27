@@ -1,35 +1,49 @@
 import { useEffect, useState } from 'react'
 
-function Exercicio3() {
+const URL = 'https://jsonplaceholder.typicode.com/users'
+
+// Exercício 3: AbortController.
+// Ao desmontar o componente, o cleanup do useEffect cancela a requisição.
+export default function Exercicio3() {
   const [usuarios, setUsuarios] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(null)
 
   useEffect(() => {
-    async function buscarUsuarios() {
-      const resposta = await fetch('https://reqres.in/api/users?page=2', {
-        // O reqres.in passou a exigir uma chave. Se der 401, gere uma
-        // chave grátis no site e troque o valor abaixo.
-        headers: { 'x-api-key': 'reqres-free-v1' },
-      })
-      const dados = await resposta.json()
-      // A resposta é { page, per_page, total, total_pages, data: [...] }
-      // então a lista de usuários está em dados.data
-      setUsuarios(dados.data)
+    const controller = new AbortController()
+
+    async function carregar() {
+      try {
+        const resp = await fetch(URL, { signal: controller.signal })
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+        const data = await resp.json()
+        setUsuarios(data)
+      } catch (err) {
+        // Cancelar lança AbortError. Não é erro de verdade:
+        // o componente já saiu da tela, então não atualizamos o estado.
+        if (err.name === 'AbortError') {
+          console.log('Requisição cancelada (AbortError)')
+          return
+        }
+        setErro(err.message)
+      } finally {
+        if (!controller.signal.aborted) setCarregando(false)
+      }
     }
-    buscarUsuarios()
+    carregar()
+
+    // Cleanup: roda ao desmontar (e antes de o efeito rodar de novo).
+    return () => controller.abort()
   }, [])
 
+  if (carregando) return <p>Carregando...</p>
+  if (erro) return <p>Erro: {erro}</p>
+
   return (
-    <div>
-      <h1>Usuários (página 2)</h1>
-      <ul>
-        {usuarios.map((u) => (
-          <li key={u.id}>
-            {u.first_name} {u.last_name} - {u.email}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul>
+      {usuarios.map((u) => (
+        <li key={u.id}>{u.name}</li>
+      ))}
+    </ul>
   )
 }
-
-export default Exercicio3
